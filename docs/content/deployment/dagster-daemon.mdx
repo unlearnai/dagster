@@ -32,3 +32,32 @@ The following daemons are currently available:
 To check the status of your `dagster-daemon` process within Dagit, click on "Status" in the left nav. This will take you a page where you can see information about each daemon that's currently configured on your instance.
 
 Each daemon periodically writes a heartbeat to your instance storage, so if a daemon doesn't show a recent heartbeat on this page, it likely indicates that you should check the logs from your `dagster-daemon` process for errors.
+
+## Run Monitoring (Experimental)
+
+The `MonitoringDaemon` can detect hanging runs and restart crashed run workers. This is experimental, and currently only supported when using the `K8sRunLauncher` and `k8s_job_executor`, or `DockerRunLauncher` and `docker_executor`.
+
+```yaml file=/deploying/dagster_instance/dagster.yaml startafter=start_run_monitoring endbefore=end_run_monitoring
+# Opt in to the experimental Monitoring Daemon
+run_monitoring:
+  enabled: true
+  # values below are the defaults, and don't need to be specified execpt to override them
+  start_timeout_seconds: 180
+  max_resume_run_attempts: 3
+  poll_interval_seconds: 120
+```
+
+The daemon has two monitoring features:
+
+### Run start timeouts
+
+After a RunLauncher launches a run, the run stays in STARTING status until the run worker spins up and marks the run as STARTED. In the event that some failure causes the run worker to not spin up, the run might be stuck in STARTING status. The `start_timeout_seconds` offers a time limit for how long runs can hang in this state before being marked as failed.
+
+### Resuming runs after run worker crashes
+
+It's possible for a run worker process to crash during a run. This can happen for a variety of reasons (the host it's running on could go down, it could OOM, etc.). Without the monitoring daemon, there are two possible outcomes, neither desirable:
+
+- If the run worker was able to catch the interrupt, it will mark the run as failed
+- If the run worker goes down without a grace period, the run could be left hanging in STARTED status
+
+The monitoring daemon handles these by performing health checks on the run workers. If a failure is detected, the daemon can launch a new run worker which resumes execution of the existing run. This can give the appearance that the failure never occured (although it will be in the event log), and the run will continue to completion. If the run worker continues to crash, the daemon will mark the run as failed after the configured numbe of attempts.
