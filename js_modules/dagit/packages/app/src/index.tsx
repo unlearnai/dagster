@@ -7,6 +7,7 @@ import {errorLink} from '@dagit/core/app/AppError';
 import {AppProvider} from '@dagit/core/app/AppProvider';
 import {AppTopNav} from '@dagit/core/app/AppTopNav';
 import {ContentRoot} from '@dagit/core/app/ContentRoot';
+import {Telemetry} from '@dagit/core/app/Telemetry';
 import {logLink, timeStartLink} from '@dagit/core/app/apolloLinks';
 import {ColorsWIP} from '@dagit/core/ui/Colors';
 import {IconWIP, IconWrapper} from '@dagit/core/ui/Icon';
@@ -54,6 +55,7 @@ ReactDOM.render(
     </AppTopNav>
     <App>
       <ContentRoot />
+      <Telemetry />
     </App>
   </AppProvider>,
   document.getElementById('root'),
