@@ -11,9 +11,11 @@ import subprocess
 import sys
 import tempfile
 import threading
+import weakref
 from collections import namedtuple
 from datetime import timezone
 from enum import Enum
+from functools import lru_cache, wraps
 from typing import (
     TYPE_CHECKING,
     Callable,
@@ -559,3 +561,28 @@ def compose(*args):
 
 def dict_without_keys(ddict, *keys):
     return {key: value for key, value in ddict.items() if key not in set(keys)}
+
+
+def cached_method(*lru_args, **lru_kwargs):
+    # wrap functools.lru_cache to allow for caching of an instance method without leaking memory
+    # due to circular references (instance -> cache -> instance)
+    #
+    # reference: https://stackoverflow.com/questions/33672412/python-functools-lru-cache-with-class-methods-release-object
+    def decorator(func):
+        @wraps(func)
+        def wrapped_func(self, *args, **kwargs):
+            # We're storing the wrapped method inside the instance. If we had
+            # a strong reference to self the instance would never die.
+            self_weak = weakref.ref(self)
+
+            @wraps(func)
+            @lru_cache(*lru_args, **lru_kwargs)
+            def _cached_method(*args, **kwargs):
+                return func(self_weak(), *args, **kwargs)
+
+            setattr(self, func.__name__, _cached_method)
+            return _cached_method(*args, **kwargs)
+
+        return wrapped_func
+
+    return decorator

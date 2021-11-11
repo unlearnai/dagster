@@ -31,7 +31,7 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster.seven import JSONDecodeError
-from dagster.utils import merge_dicts, utc_datetime_from_timestamp
+from dagster.utils import cached_method, merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
@@ -636,6 +636,7 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return bool(row)
 
+    @cached_method(maxsize=50)
     def _get_snapshot(self, snapshot_id: str):
         query = db.select([SnapshotsTable.c.snapshot_body]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
