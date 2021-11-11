@@ -11,7 +11,13 @@ from .tasks import default_ecs_task_definition, default_ecs_task_metadata
 
 @experimental
 class EcsRunLauncher(RunLauncher, ConfigurableClass):
-    def __init__(self, inst_data=None, task_definition=None, container_name="run"):
+    def __init__(
+        self,
+        inst_data=None,
+        task_definition=None,
+        container_name="run",
+        secrets_tag="dagster",
+    ):
         self._inst_data = inst_data
         self.ecs = boto3.client("ecs")
         self.ec2 = boto3.resource("ec2")
@@ -19,6 +25,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
 
         self.task_definition = task_definition
         self.container_name = container_name
+        self.secrets_tag = secrets_tag
 
         if self.task_definition:
             task_definition = self.ecs.describe_task_definition(taskDefinition=task_definition)
@@ -41,7 +48,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
     def config_type(cls):
         return {
             "task_definition": Field(
-                dagster.String,
+                dagster.StringSource,
                 is_required=False,
                 description=(
                     "The task definition to use when launching new tasks. "
@@ -50,11 +57,20 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
                 ),
             ),
             "container_name": Field(
-                dagster.String,
+                dagster.StringSource,
                 is_required=False,
                 default_value="run",
                 description=(
                     "The container name to use when launching new tasks. Defaults to 'run'."
+                ),
+            ),
+            "secrets_tag": Field(
+                dagster.StringSource,
+                is_required=False,
+                default_value="dagster",
+                description=(
+                    "AWS Secrets Manager secrets with this tag will be mounted as "
+                    "environment variables in the container. Defaults to 'dagster'."
                 ),
             ),
         }
@@ -199,9 +215,7 @@ class EcsRunLauncher(RunLauncher, ConfigurableClass):
             Filters=[
                 {
                     "Key": "tag-key",
-                    "Values": [
-                        "dagster",
-                    ],
+                    "Values": [self.secrets_tag],
                 },
             ],
         ):
