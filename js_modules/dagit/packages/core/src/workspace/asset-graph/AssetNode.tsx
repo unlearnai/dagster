@@ -6,8 +6,8 @@ import {Link} from 'react-router-dom';
 import styled from 'styled-components/macro';
 
 import {AppContext} from '../../app/AppContext';
-import {showLaunchError} from '../../execute/showLaunchError';
 import {OpTags} from '../../graph/OpTags';
+import {showLaunchError} from '../../launchpad/showLaunchError';
 import {GraphExplorerSolidHandleFragment} from '../../pipelines/types/GraphExplorerSolidHandleFragment';
 import {
   LAUNCH_PIPELINE_EXECUTION_MUTATION,
