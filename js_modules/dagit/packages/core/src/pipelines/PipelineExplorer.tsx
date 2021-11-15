@@ -60,7 +60,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
     repoAddress,
     isGraph,
   } = props;
-  const [highlighted, setHighlighted] = React.useState('');
+  const [nameMatch, setNameMatch] = React.useState('');
 
   const handleQueryChange = (solidsQuery: string) => {
     onChangeExplorerPath({...explorerPath, solidsQuery}, 'replace');
@@ -132,16 +132,15 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
     (options.explodeComposites ||
       solids.some((f) => f.definition.__typename === 'CompositeSolidDefinition'));
 
-  const queryResultSolids = React.useMemo(
+  const queryMatches = React.useMemo(
     () => (solidsQueryEnabled ? filterByQuery(solids, solidsQuery) : {all: solids, focus: []}),
     [solidsQuery, solids, solidsQueryEnabled],
   );
 
-  const {all} = queryResultSolids;
-  const highlightedSolids = React.useMemo(() => all.filter((s) => s.name.includes(highlighted)), [
-    highlighted,
-    all,
-  ]);
+  const highlightedSolids = React.useMemo(
+    () => queryMatches.all.filter((s) => s.name.includes(nameMatch)),
+    [queryMatches.all, nameMatch],
+  );
 
   const backgroundColor = parentHandle ? ColorsWIP.White : ColorsWIP.White;
   const backgroundTranslucent = Color(backgroundColor).fade(0.6).toString();
@@ -166,7 +165,7 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
               })}
               currentBreadcrumbRenderer={() => (
                 <SolidJumpBar
-                  solids={queryResultSolids.all}
+                  solids={queryMatches.all}
                   selectedSolid={selectedHandle && selectedHandle.solid}
                   onChange={(solid) => handleClickSolid({name: solid.name})}
                 />
@@ -188,9 +187,9 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
             <TextInput
               name="highlighted"
               icon="search"
-              value={highlighted}
+              value={nameMatch}
               placeholder="Highlight…"
-              onChange={(e) => setHighlighted(e.target.value)}
+              onChange={(e) => setNameMatch(e.target.value)}
             />
           </SearchOverlay>
           {explodeCompositesEnabled && (
@@ -210,13 +209,13 @@ export const PipelineExplorer: React.FC<PipelineExplorerProps> = (props) => {
           )}
           {solids.length === 0 ? <EmptyDAGNotice isGraph={isGraph} /> : null}
           {solids.length > 0 &&
-            queryResultSolids.all.length === 0 &&
+            queryMatches.all.length === 0 &&
             !explorerPath.solidsQuery.length && <LargeDAGNotice />}
           <PipelineGraphContainer
             pipelineName={pipeline.name}
             backgroundColor={backgroundColor}
-            solids={queryResultSolids.all}
-            focusSolids={queryResultSolids.focus}
+            solids={queryMatches.all}
+            focusSolids={queryMatches.focus}
             highlightedSolids={highlightedSolids}
             selectedHandle={selectedHandle}
             parentHandle={parentHandle}
@@ -292,7 +291,7 @@ const OptionsOverlay = styled.div`
   left: 0;
 `;
 
-const SearchOverlay = styled.div`
+export const SearchOverlay = styled.div`
   z-index: 2;
   padding: 12px 12px 0 0;
   display: inline-flex;

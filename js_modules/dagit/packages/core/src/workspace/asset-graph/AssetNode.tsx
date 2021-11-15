@@ -211,7 +211,7 @@ const AssetNodeContainer = styled.div<{$selected: boolean; $secondaryHighlight: 
     p.$selected
       ? `2px dashed rgba(255, 69, 0, 1)`
       : p.$secondaryHighlight
-      ? `2px solid ${ColorsWIP.Blue500}55`
+      ? `2px dashed rgba(255, 69, 0, 0.5)`
       : 'none'};
   border-radius: 6px;
   outline-offset: -1px;

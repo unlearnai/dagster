@@ -24,7 +24,7 @@ interface LayoutNode {
   x: number;
   y: number;
 }
-interface GraphData {
+export interface GraphData {
   nodes: {[id: string]: Node};
   downstream: {[upstream: string]: {[downstream: string]: string}};
   upstream: {[downstream: string]: {[upstream: string]: boolean}};
