@@ -1,5 +1,17 @@
 # Changelog
 
+# 0.13.6
+
+### Bugfixes
+
+- Previously, the `EcsRunLauncher` tagged each ECS task with its corresponding Dagster Run ID. ECS tagging isn't supported for AWS accounts that have not yet [migrated to using the long ARN format](https://aws.amazon.com/blogs/compute/migrating-your-amazon-ecs-deployment-to-the-new-arn-and-resource-id-format-2/). Now, the `EcsRunLauncher` only adds this tag if your AWS account has the long ARN format enabled.
+- Fixed a bug in the `k8s_job_executor` and `docker_executor` that could result in jobs exiting as `SUCCESS` before all ops have run.
+- Fixed a bug in the `k8s_job_executor` and `docker_executor` that could result in jobs failing when an op is skipped.
+
+### Dependencies
+
+- `graphene` is temporarily pinned to be prior to version 3 to unbreak Dagit dependencies.
+
 # 0.13.5
 
 ### New
