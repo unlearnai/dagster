@@ -571,7 +571,7 @@ class LRUCache(Generic[T]):
         self._capacity = capacity
 
     def get(self, key: str) -> Optional[T]:
-        if key not in self._cache:
+        if not self.has(key):
             return None
         else:
             self._cache.move_to_end(key)
