@@ -31,7 +31,7 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster.seven import JSONDecodeError
-from dagster.utils import merge_dicts, utc_datetime_from_timestamp, LRUCache
+from dagster.utils import LRUCache, merge_dicts, utc_datetime_from_timestamp
 
 from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
@@ -768,6 +768,8 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
             conn.execute(RunTagsTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(SnapshotsTable.delete())  # pylint: disable=no-value-for-parameter
             conn.execute(DaemonHeartbeatsTable.delete())  # pylint: disable=no-value-for-parameter
+            if self.snapshot_cache:
+                self.snapshot_cache.clear_all()
 
     def wipe_daemon_heartbeats(self):
         with self.connect() as conn:

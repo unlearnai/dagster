@@ -4,7 +4,7 @@ from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetada
 from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused-import
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp, LRUCache
+from dagster.utils import LRUCache, utc_datetime_from_timestamp
 from dagster.utils.backcompat import experimental_class_warning
 
 from ..utils import (

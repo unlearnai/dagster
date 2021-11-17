@@ -15,7 +15,7 @@ from dagster.core.storage.sql import (
 )
 from dagster.core.storage.sqlite import create_db_conn_string
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import mkdir_p, LRUCache
+from dagster.utils import LRUCache, mkdir_p
 from sqlalchemy.pool import NullPool
 
 from ..schema import RunStorageSqlMetadata, RunTagsTable, RunsTable

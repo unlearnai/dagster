@@ -13,7 +13,7 @@ import sys
 import tempfile
 import threading
 import weakref
-from collections import namedtuple, OrderedDict
+from collections import OrderedDict, namedtuple
 from datetime import timezone
 from enum import Enum
 from functools import lru_cache, wraps
@@ -21,6 +21,7 @@ from typing import (
     TYPE_CHECKING,
     Callable,
     ContextManager,
+    Dict,
     Generator,
     Generic,
     Iterator,
@@ -564,29 +565,30 @@ def dict_without_keys(ddict, *keys):
     return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
-class LRUCache:
+class LRUCache(Generic[T]):
     def __init__(self, capacity: int = 64):
-        self._cache = OrderedDict()
+        self._cache: OrderedDict = OrderedDict()
         self._capacity = capacity
 
-    def cache(self):
-        return self._cache
-
-    def get(self, key):
+    def get(self, key: str) -> Optional[T]:
         if key not in self._cache:
             return None
         else:
             self._cache.move_to_end(key)
             return self._cache[key]
 
-    def put(self, key, value):
+    def put(self, key: str, value: T):
         self._cache[key] = value
         self._cache.move_to_end(key)
         if len(self._cache) > self._capacity:
             self._cache.popitem(last=False)
 
-    def has(self, key):
+    def has(self, key: str) -> bool:
         return key in self._cache
 
-    def clear(self, key):
-        return key in self._cache
+    def clear(self, key: str):
+        if self.has(key):
+            del self._cache[key]
+
+    def clear_all(self):
+        self._cache: OrderedDict = OrderedDict()

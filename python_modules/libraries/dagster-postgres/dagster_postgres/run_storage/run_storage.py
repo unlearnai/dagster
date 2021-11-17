@@ -3,7 +3,7 @@ from dagster import check
 from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetadata, SqlRunStorage
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp, LRUCache
+from dagster.utils import LRUCache, utc_datetime_from_timestamp
 
 from ..utils import (
     create_pg_connection,
