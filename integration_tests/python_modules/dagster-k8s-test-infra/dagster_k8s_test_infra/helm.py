@@ -545,7 +545,12 @@ def helm_chart(namespace, docker_image, should_cleanup=True):
         "postgresqlDatabase": "test",
         "postgresqlUser": "test",
         "dagsterDaemon": {
-            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy}
+            "image": {"repository": repository, "tag": tag, "pullPolicy": pull_policy},
+            "runMonitoring": {
+                "enabled": True,
+                "pollIntervalSeconds": 5,
+                "max_resume_run_attempts": 0,
+            },
         },
     }
 

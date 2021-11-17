@@ -20,6 +20,7 @@ if __name__ == "__main__":
         install_requires=[
             "dagster",
             "pyspark",
+            "google-cloud-bigquery<3",
         ],
         zip_safe=False,
     )
