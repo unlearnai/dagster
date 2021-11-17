@@ -1,3 +1,4 @@
+import collections
 import contextlib
 import datetime
 import errno
@@ -12,7 +13,7 @@ import sys
 import tempfile
 import threading
 import weakref
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from datetime import timezone
 from enum import Enum
 from functools import lru_cache, wraps
@@ -563,26 +564,29 @@ def dict_without_keys(ddict, *keys):
     return {key: value for key, value in ddict.items() if key not in set(keys)}
 
 
-def cached_method(*lru_args, **lru_kwargs):
-    # wrap functools.lru_cache to allow for caching of an instance method without leaking memory
-    # due to circular references (instance -> cache -> instance)
-    #
-    # reference: https://stackoverflow.com/questions/33672412/python-functools-lru-cache-with-class-methods-release-object
-    def decorator(func):
-        @wraps(func)
-        def wrapped_func(self, *args, **kwargs):
-            # We're storing the wrapped method inside the instance. If we had
-            # a strong reference to self the instance would never die.
-            self_weak = weakref.ref(self)
+class LRUCache:
+    def __init__(self, capacity: int = 64):
+        self._cache = OrderedDict()
+        self._capacity = capacity
 
-            @wraps(func)
-            @lru_cache(*lru_args, **lru_kwargs)
-            def _cached_method(*args, **kwargs):
-                return func(self_weak(), *args, **kwargs)
+    def cache(self):
+        return self._cache
 
-            setattr(self, func.__name__, _cached_method)
-            return _cached_method(*args, **kwargs)
+    def get(self, key):
+        if key not in self._cache:
+            return None
+        else:
+            self._cache.move_to_end(key)
+            return self._cache[key]
 
-        return wrapped_func
+    def put(self, key, value):
+        self._cache[key] = value
+        self._cache.move_to_end(key)
+        if len(self._cache) > self._capacity:
+            self._cache.popitem(last=False)
 
-    return decorator
+    def has(self, key):
+        return key in self._cache
+
+    def clear(self, key):
+        return key in self._cache

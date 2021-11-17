@@ -4,7 +4,7 @@ from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetada
 from dagster.core.storage.sql import stamp_alembic_rev  # pylint: disable=unused-import
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp
+from dagster.utils import utc_datetime_from_timestamp, LRUCache
 from dagster.utils.backcompat import experimental_class_warning
 
 from ..utils import (
@@ -50,6 +50,8 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
 
         self._index_migration_cache = {}
         table_names = retry_mysql_connection_fn(db.inspect(self._engine).get_table_names)
+
+        self._snapshot_cache = LRUCache()
 
         # Stamp and create tables if the main table does not exist (we can't check alembic
         # revision because alembic config may be shared with other storage classes)
@@ -107,6 +109,10 @@ class MySQLRunStorage(SqlRunStorage, ConfigurableClass):
         alembic_config = mysql_alembic_config(__file__)
         with self.connect() as conn:
             run_alembic_upgrade(alembic_config, conn)
+
+    @property
+    def snapshot_cache(self) -> LRUCache:
+        return self._snapshot_cache
 
     def has_built_index(self, migration_name):
         if migration_name not in self._index_migration_cache:

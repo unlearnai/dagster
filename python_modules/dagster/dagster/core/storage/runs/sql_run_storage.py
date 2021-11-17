@@ -31,7 +31,7 @@ from dagster.serdes import (
     serialize_dagster_namedtuple,
 )
 from dagster.seven import JSONDecodeError
-from dagster.utils import cached_method, merge_dicts, utc_datetime_from_timestamp
+from dagster.utils import merge_dicts, utc_datetime_from_timestamp, LRUCache
 
 from ..pipeline_run import PipelineRun, PipelineRunsFilter, RunRecord
 from .base import RunStorage
@@ -63,6 +63,10 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
         """This method should perform any schema or data migrations necessary to bring an
         out-of-date instance of the storage up to date.
         """
+
+    @property
+    def snapshot_cache(self) -> Optional[LRUCache]:
+        return None
 
     def fetchall(self, query):
         with self.connect() as conn:
@@ -625,9 +629,13 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
                 )
             )
             conn.execute(snapshot_insert)
+            if self.snapshot_cache:
+                self.snapshot_cache.put(snapshot_id, snapshot_obj)
             return snapshot_id
 
     def _has_snapshot_id(self, snapshot_id: str) -> bool:
+        if self.snapshot_cache and self.snapshot_cache.has(snapshot_id):
+            return True
         query = db.select([SnapshotsTable.c.snapshot_id]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
         )
@@ -636,15 +644,20 @@ class SqlRunStorage(RunStorage):  # pylint: disable=no-init
 
         return bool(row)
 
-    @cached_method(maxsize=50)
     def _get_snapshot(self, snapshot_id: str):
+        if self.snapshot_cache and self.snapshot_cache.has(snapshot_id):
+            return self.snapshot_cache.get(snapshot_id)
+
         query = db.select([SnapshotsTable.c.snapshot_body]).where(
             SnapshotsTable.c.snapshot_id == snapshot_id
         )
 
         row = self.fetchone(query)
 
-        return defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
+        snapshot = defensively_unpack_pipeline_snapshot_query(logging, row) if row else None
+        if self.snapshot_cache and snapshot:
+            self.snapshot_cache.put(snapshot_id, snapshot)
+        return snapshot
 
     def _get_partition_runs(
         self, partition_set_name: str, partition_name: str

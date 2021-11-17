@@ -3,7 +3,7 @@ from dagster import check
 from dagster.core.storage.runs import DaemonHeartbeatsTable, RunStorageSqlMetadata, SqlRunStorage
 from dagster.core.storage.sql import create_engine, run_alembic_upgrade, stamp_alembic_rev
 from dagster.serdes import ConfigurableClass, ConfigurableClassData, serialize_dagster_namedtuple
-from dagster.utils import utc_datetime_from_timestamp
+from dagster.utils import utc_datetime_from_timestamp, LRUCache
 
 from ..utils import (
     create_pg_connection,
@@ -49,6 +49,7 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
             poolclass=db.pool.NullPool,
         )
 
+        self._snapshot_cache = LRUCache()
         self._index_migration_cache = {}
         table_names = retry_pg_connection_fn(lambda: db.inspect(self._engine).get_table_names())
 
@@ -113,6 +114,10 @@ class PostgresRunStorage(SqlRunStorage, ConfigurableClass):
     def upgrade(self):
         with self.connect() as conn:
             run_alembic_upgrade(pg_alembic_config(__file__), conn)
+
+    @property
+    def snapshot_cache(self) -> LRUCache:
+        return self._snapshot_cache
 
     def has_built_index(self, migration_name):
         if migration_name not in self._index_migration_cache:

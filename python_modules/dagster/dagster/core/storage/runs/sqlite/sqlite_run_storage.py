@@ -15,7 +15,7 @@ from dagster.core.storage.sql import (
 )
 from dagster.core.storage.sqlite import create_db_conn_string
 from dagster.serdes import ConfigurableClass, ConfigurableClassData
-from dagster.utils import mkdir_p
+from dagster.utils import mkdir_p, LRUCache
 from sqlalchemy.pool import NullPool
 
 from ..schema import RunStorageSqlMetadata, RunTagsTable, RunsTable
@@ -49,7 +49,7 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
         check.str_param(conn_string, "conn_string")
         self._conn_string = conn_string
         self._inst_data = check.opt_inst_param(inst_data, "inst_data", ConfigurableClassData)
-
+        self._snapshot_cache = LRUCache()
         super().__init__()
 
     @property
@@ -116,6 +116,10 @@ class SqliteRunStorage(SqlRunStorage, ConfigurableClass):
     def upgrade(self):
         self._check_for_version_066_migration_and_perform()
         self._alembic_upgrade()
+
+    @property
+    def snapshot_cache(self) -> LRUCache:
+        return self._snapshot_cache
 
     # In version 0.6.6, we changed the layout of the of the sqllite dbs on disk
     # to move from the root of DAGSTER_HOME/runs.db to DAGSTER_HOME/history/runs.bd
