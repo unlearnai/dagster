@@ -30,7 +30,7 @@ class JobDefinition(PipelineDefinition):
         preset_defs: Optional[List[PresetDefinition]] = None,
         tags: Dict[str, Any] = None,
         hook_defs: Optional[AbstractSet[HookDefinition]] = None,
-        retry_policy: Optional[RetryPolicy] = None,
+        op_retry_policy: Optional[RetryPolicy] = None,
         version_strategy: Optional[VersionStrategy] = None,
         _op_selection_data: Optional[OpSelectionData] = None,
     ):
@@ -47,7 +47,7 @@ class JobDefinition(PipelineDefinition):
             preset_defs=preset_defs,
             tags=tags,
             hook_defs=hook_defs,
-            solid_retry_policy=retry_policy,
+            solid_retry_policy=op_retry_policy,
             graph_def=graph_def,
             version_strategy=version_strategy,
         )
@@ -134,7 +134,7 @@ class JobDefinition(PipelineDefinition):
             mode_def=in_proc_mode,
             hook_defs=self.hook_defs,
             tags=self.tags,
-            retry_policy=self._solid_retry_policy,
+            op_retry_policy=self._solid_retry_policy,
             version_strategy=self.version_strategy,
         ).get_job_def_for_op_selection(op_selection)
 
@@ -199,7 +199,7 @@ class JobDefinition(PipelineDefinition):
             preset_defs=self.preset_defs,
             tags=self.tags,
             hook_defs=self.hook_defs,
-            retry_policy=self._retry_policy,
+            op_retry_policy=self._solid_retry_policy,
             graph_def=subset_pipeline_def.graph,
             version_strategy=self.version_strategy,
             _op_selection_data=OpSelectionData(
@@ -240,7 +240,7 @@ class JobDefinition(PipelineDefinition):
             tags=self.tags,
             hook_defs=hook_defs | self.hook_defs,
             description=self._description,
-            retry_policy=self._retry_policy,
+            op_retry_policy=self._solid_retry_policy,
             _op_selection_data=self._op_selection_data,
         )
 
