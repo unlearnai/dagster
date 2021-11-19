@@ -24,20 +24,7 @@ from dagster_test.test_project import (
 from . import IS_BUILDKITE, docker_postgres_instance
 
 
-def test_launch_docker_no_network():
-    docker_image = get_test_project_docker_image()
-    launcher_config = {
-        "env_vars": [
-            "AWS_ACCESS_KEY_ID",
-            "AWS_SECRET_ACCESS_KEY",
-        ],
-    }
-
-    if IS_BUILDKITE:
-        launcher_config["registry"] = get_buildkite_registry_config()
-    else:
-        find_local_test_image(docker_image)
-
+def test_launch_conda():
     run_config = merge_yamls(
         [
             os.path.join(get_test_project_environments_path(), "env.yaml"),

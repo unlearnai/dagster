@@ -26,3 +26,10 @@ def validate_conda_config(*args):
     # TODO: check that environment cache exists
     pass
 
+
+def create_or_return_conda_environment(environment_yaml_, use_mamba: bool = False):
+    """
+    Create a conda environment or return existing environment from a local filesystem.
+    """
+    pass
+
