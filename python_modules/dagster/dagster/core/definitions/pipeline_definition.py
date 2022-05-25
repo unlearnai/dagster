@@ -1069,15 +1069,16 @@ def _build_all_node_defs(node_defs: List[NodeDefinition]) -> Dict[str, NodeDefin
     all_defs: Dict[str, NodeDefinition] = {}
     for current_level_node_def in node_defs:
         for node_def in current_level_node_def.iterate_node_defs():
-            if node_def.name in all_defs:
-                if all_defs[node_def.name] != node_def:
+            namespaced_name = ".".join([current_level_node_def.name, node_def.name])
+            if namespaced_name in all_defs:
+                if all_defs[namespaced_name] != node_def:
                     raise DagsterInvalidDefinitionError(
                         'Detected conflicting node definitions with the same name "{name}"'.format(
-                            name=node_def.name
+                            name=namespaced_name
                         )
                     )
             else:
-                all_defs[node_def.name] = node_def
+                all_defs[namespaced_name] = node_def
 
     return all_defs
 
