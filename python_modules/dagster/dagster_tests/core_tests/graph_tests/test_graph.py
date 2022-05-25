@@ -11,6 +11,7 @@ from dagster import (
     DagsterTypeCheckDidNotPass,
     Enum,
     Field,
+    GraphOut,
     In,
     InputDefinition,
     Nothing,
@@ -21,6 +22,7 @@ from dagster import (
     logger,
     op,
     resource,
+    solid,
     success_hook,
 )
 from dagster._check import CheckError
@@ -420,6 +422,53 @@ def test_conflict():
         def _conflict_zone():
             test_1()
             test_2()
+
+
+def test_factory_composition_bug():
+    # make sure that namespaced conflicts DO work
+    def make_simple(name):
+        @op(config_schema={"payload": Permissive()}, name=name)
+        def fn(context):
+            return context.op_config["payload"]
+
+        return fn
+
+    @graph()
+    def wrapped_simple():
+        return make_simple("simple")()
+
+    expected_payload = {"key": ["hello", "there"]}
+    result = wrapped_simple.execute_in_process(
+        run_config={"ops": {"simple": {"config": {"payload": expected_payload}}}}
+    )
+
+    # default execution works
+    assert result.success
+    assert result.output_value() == expected_payload
+
+    # what if we use a factory function twice, but with the same name?
+    @graph()
+    def wrapped_simple_extra():
+        return make_simple("simple")()
+
+    @graph(out={"val1": GraphOut(), "val2": GraphOut()})
+    def wrap_all_simples():
+        return {"val1": wrapped_simple(), "val2": wrapped_simple_extra()}
+
+    # how about nested?
+    result2 = wrap_all_simples.execute_in_process(
+        run_config={
+            "ops": {
+                "wrapped_simple": {"ops": {"simple": {"config": {"payload": expected_payload}}}},
+                "wrapped_simple_extra": {
+                    "ops": {"simple": {"config": {"payload": expected_payload}}}
+                },
+            }
+        }
+    )
+    assert result2.success
+    assert result2.output_value("val1") == expected_payload
+    assert result2.output_value("val2") == expected_payload
 
 
 def test_desc():
